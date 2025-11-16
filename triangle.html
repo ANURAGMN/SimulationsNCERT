@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Triangle Area Maximizer (6, 10, x)</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 20px;
+      background: #f5f7fb;
+      color: #222;
+    }
+    h1 {
+      font-size: 1.6rem;
+      margin-bottom: 0.2rem;
+    }
+    .subtitle {
+      color: #555;
+      margin-bottom: 1rem;
+    }
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .panel {
+      background: #fff;
+      padding: 16px 20px;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+      flex: 1 1 320px;
+    }
+    #triangle-svg {
+      border-radius: 12px;
+      background: #fdfdfd;
+      box-shadow: inset 0 0 0 1px #e0e0e0;
+    }
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    input[type="range"] {
+      flex: 1;
+    }
+    .value-pill {
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: #eef2ff;
+      font-size: 0.85rem;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .stat-card {
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      font-size: 0.9rem;
+    }
+    .stat-label {
+      color: #555;
+      font-size: 0.8rem;
+      margin-bottom: 2px;
+    }
+    .stat-value {
+      font-weight: 600;
+    }
+    .max-note {
+      margin-top: 10px;
+      font-size: 0.9rem;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: #ecfdf3;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+      display: none;
+    }
+    .badge {
+      display: inline-block;
+      margin-left: 6px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #fee2e2;
+      color: #b91c1c;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Triangle with sides 6, 10 and x</h1>
+<div class="subtitle">
+  Move the angle θ between sides 6 and 10 and see how the third side x and the area change.
+  <span class="badge">Max area when θ = 90°</span>
+</div>
+
+<div class="container">
+
+  <!-- Geometry / SVG panel -->
+  <div class="panel">
+    <svg id="triangle-svg" width="500" height="350">
+      <!-- grid-ish background -->
+      <defs>
+        <pattern id="grid" width="25" height="25" patternUnits="userSpaceOnUse">
+          <path d="M 25 0 L 0 0 0 25" fill="none" stroke="#e5e7eb" stroke-width="1" />
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#grid)" />
+
+      <!-- Triangle sides -->
+      <polygon id="triangle" fill="#bfdbfe" stroke="#1d4ed8" stroke-width="3" opacity="0.8"></polygon>
+
+      <!-- Vertices -->
+      <circle id="pointA" r="5" fill="#0f172a"></circle>
+      <circle id="pointB" r="5" fill="#0f172a"></circle>
+      <circle id="pointC" r="5" fill="#0f172a"></circle>
+
+      <!-- Labels -->
+      <text id="labelA" font-size="14" fill="#111827">A</text>
+      <text id="labelB" font-size="14" fill="#111827">B</text>
+      <text id="labelC" font-size="14" fill="#111827">C</text>
+
+      <text id="label6" font-size="13" fill="#111827"></text>
+      <text id="label10" font-size="13" fill="#111827"></text>
+      <text id="labelX" font-size="13" fill="#111827"></text>
+    </svg>
+  </div>
+
+  <!-- Controls / stats -->
+  <div class="panel">
+    <h2 style="margin-top:0;">Controls</h2>
+    <div>Angle at A between sides 6 and 10:</div>
+    <div class="slider-row">
+      <input id="thetaSlider" type="range" min="5" max="175" value="60" />
+      <span class="value-pill"><span id="thetaVal">60</span>°</span>
+    </div>
+
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-label">Third side length x</div>
+        <div class="stat-value"><span id="xVal"></span></div>
+        <div style="font-size:0.75rem;color:#64748b;">(BC in units)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Area of △ABC</div>
+        <div class="stat-value"><span id="areaVal"></span></div>
+        <div style="font-size:0.75rem;color:#64748b;">(square units)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Exact max-area x</div>
+        <div class="stat-value">2√34 ≈ 11.66</div>
+        <div style="font-size:0.75rem;color:#64748b;">(when θ = 90°)</div>
+      </div>
+    </div>
+
+    <div class="max-note" id="maxNote">
+      ✅ You are at (or very close to) θ = 90°.  
+      Here the triangle is right-angled at A and the area is maximum.
+    </div>
+
+    <p style="margin-top:16px;font-size:0.9rem;color:#475569;">
+      Geometry behind this:
+      For fixed sides 6 and 10, the area is
+      <br>
+      <b>Area = ½ · 6 · 10 · sin(θ) = 30·sin(θ)</b>.
+      Since sin(θ) ≤ 1, the largest area occurs when sin(θ) = 1 → θ = 90°.
+      At that point, the third side is
+      <b>x = √(6² + 10²) = 2√34</b>.
+    </p>
+  </div>
+</div>
+
+<script>
+  // Fixed sides
+  const a = 6;   // AC
+  const b = 10;  // AB
+  const scale = 25;
+
+  // SVG elements
+  const svg = document.getElementById("triangle-svg");
+  const tri = document.getElementById("triangle");
+  const Apoint = document.getElementById("pointA");
+  const Bpoint = document.getElementById("pointB");
+  const Cpoint = document.getElementById("pointC");
+  const labelA = document.getElementById("labelA");
+  const labelB = document.getElementById("labelB");
+  const labelC = document.getElementById("labelC");
+  const label6 = document.getElementById("label6");
+  const label10 = document.getElementById("label10");
+  const labelX = document.getElementById("labelX");
+
+  // Stats elements
+  const thetaSlider = document.getElementById("thetaSlider");
+  const thetaVal = document.getElementById("thetaVal");
+  const xVal = document.getElementById("xVal");
+  const areaVal = document.getElementById("areaVal");
+  const maxNote = document.getElementById("maxNote");
+
+  // Fixed coordinates for A and B
+  const Ax = 60;
+  const Ay = 280;
+  const Bx = Ax + b * scale;
+  const By = Ay;
+
+  function updateTriangle() {
+    const thetaDeg = parseFloat(thetaSlider.value);
+    const thetaRad = thetaDeg * Math.PI / 180;
+
+    thetaVal.textContent = thetaDeg.toFixed(0);
+
+    // Compute C in "math" coordinates then map to SVG
+    const Cx = Ax + a * scale * Math.cos(thetaRad);
+    const Cy = Ay - a * scale * Math.sin(thetaRad);
+
+    // Update polygon points
+    tri.setAttribute("points", `${Ax},${Ay} ${Bx},${By} ${Cx},${Cy}`);
+
+    // Update vertices
+    Apoint.setAttribute("cx", Ax);
+    Apoint.setAttribute("cy", Ay);
+    Bpoint.setAttribute("cx", Bx);
+    Bpoint.setAttribute("cy", By);
+    Cpoint.setAttribute("cx", Cx);
+    Cpoint.setAttribute("cy", Cy);
+
+    // Labels near points
+    labelA.setAttribute("x", Ax - 15);
+    labelA.setAttribute("y", Ay + 18);
+    labelA.textContent = "A";
+
+    labelB.setAttribute("x", Bx + 5);
+    labelB.setAttribute("y", By + 18);
+    labelB.textContent = "B";
+
+    labelC.setAttribute("x", Cx + 5);
+    labelC.setAttribute("y", Cy - 8);
+    labelC.textContent = "C";
+
+    // Side labels
+    label10.setAttribute("x", (Ax + Bx) / 2 - 10);
+    label10.setAttribute("y", (Ay + By) / 2 - 8);
+    label10.textContent = "10";
+
+    label6.setAttribute("x", (Ax + Cx) / 2 - 10);
+    label6.setAttribute("y", (Ay + Cy) / 2 - 8);
+    label6.textContent = "6";
+
+    labelX.setAttribute("x", (Bx + Cx) / 2 + 5);
+    labelX.setAttribute("y", (By + Cy) / 2);
+    labelX.textContent = "x";
+
+    // Compute x and area (in units, not pixels)
+    const x = Math.sqrt(
+      Math.pow((Bx - Cx) / scale, 2) +
+      Math.pow((By - Cy) / scale, 2)
+    );
+    const area = 0.5 * a * b * Math.sin(thetaRad);
+
+    xVal.textContent = x.toFixed(2);
+    areaVal.textContent = area.toFixed(2);
+
+    // Show note if angle is near 90°
+    if (Math.abs(thetaDeg - 90) < 1) {
+      maxNote.style.display = "block";
+    } else {
+      maxNote.style.display = "none";
+    }
+  }
+
+  // Initialize
+  thetaSlider.addEventListener("input", updateTriangle);
+  updateTriangle();
+</script>
+
+</body>
+</html>
